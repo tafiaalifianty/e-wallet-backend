@@ -1,0 +1,514 @@
+openapi: 3.0.3
+info:
+  title: E-Wallet Backend Assignment
+  description: |-
+    This is an API documentation for E-Wallet Backend created for the purpose of fulfilling the Digitalent Batch 03 assignment.
+    
+    The repository for this API is stored in [Repository Link](https://github.com/swagger-api/swagger-petstore)
+  contact:
+    email: tafia.putri@shopee.com
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+tags:
+  - name: Authentication
+    description: API for you to access e-wallet
+  - name: User
+    description: API regarding user account
+  - name: Transaction
+    description: API for e-wallet transactions
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new account and wallet
+      description: Create a new account and wallet by using name, email, and password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+              - type: object
+                properties:
+                  name:
+                    type: string
+                    example: Example Name
+              - $ref: '#/components/schemas/EmailPassword'
+        required: true
+      responses:
+        '201':
+          description: Account and wallet created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CreatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/AuthData'
+                          - type: object
+                            properties:
+                              user:
+                                $ref: '#/components/schemas/UserWithWallet'
+        '400':
+          description: Invalid Request Body
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/InvalidRequestBodyResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login to API
+      description: Login to API to access E-Wallet features
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/EmailPassword'
+        required: true
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/OKResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/AuthData'
+                          - type: object
+                            properties:
+                              user:
+                                $ref: '#/components/schemas/UserWithWallet'
+        '400':
+          description: Invalid Request Body
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/InvalidRequestBodyResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /users/info:
+    get:
+      tags:
+        - User
+      summary: Get information about your account
+      description: Get information about your account's profile and wallet
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/OKResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserWithWallet'
+        '400':
+          description: Invalid Request Body
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/InvalidRequestBodyResponse'
+        '404':
+          description: Cannot found user data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/NotFoundBodyResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth:
+          - read
+  /transactions:
+    get:
+      tags:
+        - Transaction
+      summary: Get account's transaction history
+      description: Get a user account's transaction history (topup & transfer) with pagination
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/OKResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          pagination:
+                            $ref: '#/components/schemas/Pagination'
+                          rows:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid Request Body
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/InvalidRequestBodyResponse'
+        '404':
+          description: Cannot found transaction data for wallet
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/NotFoundBodyResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth:
+          - read
+  /transactions/topup:
+    post:
+      tags:
+        - Transaction
+      summary: Topup account's wallet
+      description: Topup account's wallet with certain amount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: 500000
+                source_id:
+                  type: integer
+                  default: 1
+                  enum:
+                    - 1
+                    - 2
+                    - 3
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/OKResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid Request Body
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/InvalidRequestBodyResponse'
+        '404':
+          description: Cannot found transaction data for wallet
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/NotFoundBodyResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth:
+          - read
+  /transactions/transfer:
+    post:
+      tags:
+        - Transaction
+      summary: Topup account's wallet
+      description: Topup account's wallet with certain amount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: 500000
+                to:
+                  type: integer
+                  example: 100001
+                description:
+                  type: string
+                  example: Buying earphone
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/OKResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TransactionTransfer'
+        '400':
+          description: Invalid Request Body
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/InvalidRequestBodyResponse'
+        '404':
+          description: Cannot found wallet data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/NotFoundBodyResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth:
+          - read
+components:
+  responses:
+    InvalidRequestBody:
+      description: Invalid Request Body
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/InvalidRequestBodyResponse'
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/InternalServerErrorResponse'
+  schemas:
+    CreatedResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 201
+        message:
+          type: string
+          example: created
+    OKResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OK
+    InvalidRequestBodyResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Request body is invalid
+        data:
+          type: object
+          nullable: true
+    NotFoundBodyResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: Cannot found data
+        data:
+          type: object
+          nullable: true
+    InternalServerErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 500
+        message:
+          type: string
+          example: Internal Server Error
+        data:
+          type: object
+          nullable: true
+    EmailPassword:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: example@email.com
+        password:
+          type: string
+          example: password
+    UserWithWallet:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: example
+        email:
+          type: string
+          format: email
+          example: example@email.com
+        wallet_number:
+          type: integer
+          example: 100001
+        wallet:
+          $ref: '#/components/schemas/WalletModel'
+    UserModel:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: example
+        email:
+          type: string
+          format: email
+          example: example@email.com
+        wallet_number:
+          type: integer
+          example: 100001
+    WalletModel:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        wallet_number:
+          type: integer
+          example: 100001
+        balance:
+          type: integer
+          example: 200000
+    AuthData:
+      type: object
+      properties:
+        id_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJESUdJVEFMRU5UIEFTU0lHTk1FTlQgQVBJIiwiZXhwIjoxNjYyNzE0NDIzLCJpYXQiOjE2NjI3MTI2MjMsInVzZXIiOnsiaWQiOjEsIm5hbWUiOiJBbmFuZGEiLCJlbWFpbCI6ImFuYW5kYUBnbWFpbC5jb20iLCJ3YWxsZXRfbnVtYmVyIjoxfX0.k-kEgN62vWR0HWzLE2cKz7uoXfzl_aPL6Cz12c251hI
+    Transaction:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        amount:
+          type: integer
+          example: 50000
+        description:
+          type: string
+          example: Top up from Cash
+        type:
+          type: string
+          default: TOP_UP
+          enum:
+            - TOP_UP
+            - TRANSFER
+        datetime:
+          type: string
+          example: 2022-09-09T13:52:41.506203+07:00
+        source:
+          type: string
+          default: Cash
+          enum:
+            - Cash
+            - Bank transfer
+            - Credit card
+        to:
+          type: integer
+          example: 1
+    TransactionTransfer:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        amount:
+          type: integer
+          example: 50000
+        description:
+          type: string
+          example: Top up from Cash
+        type:
+          type: string
+          example: TRANSFER
+        datetime:
+          type: string
+          example: 2022-09-09T13:52:41.506203+07:00
+        to:
+          type: integer
+          example: 1
+        from:
+          type: integer
+          example: 2
+    Pagination:
+      type: object
+      properties:
+        limit:
+          type: integer
+          example: 5
+        page:
+          type: integer
+          example: 1
+        sort:
+          type: string
+          default: desc
+          enum:
+            - desc
+            - asc
+        sortBy:
+          type: string
+          default: datetime
+          enum:
+            - datetime
+            - amount
+            - to
+        total_rows:
+          type: integer
+          example: 15
+        total_pages:
+          type: integer
+          example: 3
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer 
+  
+    
+          
